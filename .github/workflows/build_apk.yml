@@ -1,0 +1,108 @@
+# ============================================================
+# EV SQUARE — GitHub Actions Build Workflow
+# Builds a release APK in the cloud. No local setup needed.
+#
+# HOW TO USE:
+#   Push your code to GitHub → Actions tab → watch it build →
+#   download the APK from the "Artifacts" section when done.
+#
+# This file must be at:
+#   flutter_app/.github/workflows/build_apk.yml
+# ============================================================
+
+name: Build EV SQUARE APK
+
+# WHEN does this workflow run?
+on:
+  push:
+    branches:
+      - main        # Runs every time you push to the main branch
+      - master      # Also runs on "master" branch (in case yours is named that)
+  workflow_dispatch:  # Adds a manual "Run workflow" button on GitHub
+
+jobs:
+  build-apk:
+    name: Build Release APK
+    # Use Ubuntu — it's free, fast, and has everything Flutter needs
+    runs-on: ubuntu-latest
+
+    steps:
+
+      # ── Step 1: Download your source code onto the build machine ──────────
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      # ── Step 2: Install Java 17 ───────────────────────────────────────────
+      # Android build tools require Java. Version 17 is required for
+      # AGP 8.11.1 (the Android Gradle Plugin version in your project).
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin    # Free OpenJDK build from Eclipse Adoptium
+          java-version: '17'
+
+      # ── Step 3: Install Flutter ───────────────────────────────────────────
+      # Downloads Flutter stable channel. Matches your pubspec.yaml requirement.
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.32.2'   # Latest stable as of mid-2025
+          channel: stable
+          cache: true                 # Caches Flutter between runs (faster)
+
+      # ── Step 4: Confirm Flutter is working ───────────────────────────────
+      - name: Flutter version check
+        run: flutter --version
+
+      # ── Step 5: Install Android SDK components ────────────────────────────
+      # The ubuntu-latest runner has Android SDK pre-installed.
+      # We just need to install the specific NDK version your project needs.
+      - name: Install Android NDK
+        run: |
+          echo "Installing NDK 27.0.12077973 (matches ndkVersion in app/build.gradle)"
+          ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager \
+            "ndk;27.0.12077973" \
+            "cmake;3.22.1" \
+            --sdk_root=${ANDROID_HOME}
+
+      # ── Step 6: Install Flutter package dependencies ──────────────────────
+      # Reads pubspec.yaml and downloads: flutter_webrtc, web_socket_channel, etc.
+      - name: flutter pub get
+        run: flutter pub get
+
+      # ── Step 7: Verify no Dart analysis errors ─────────────────────────────
+      # This catches any code problems before wasting time on a full build.
+      - name: flutter analyze
+        run: flutter analyze --no-fatal-infos
+        continue-on-error: true    # Warnings won't fail the build
+
+      # ── Step 8: Build the release APK ─────────────────────────────────────
+      # --release = optimized APK for installation on real devices
+      # The APK is signed with the debug key (sufficient for direct install,
+      # not for Play Store upload).
+      - name: Build release APK
+        run: |
+          flutter build apk --release \
+            --no-tree-shake-icons \
+            --verbose
+        env:
+          # Give Gradle more memory in the cloud (machines have 7 GB RAM)
+          GRADLE_OPTS: "-Xmx3g -XX:MaxMetaspaceSize=512m"
+
+      # ── Step 9: Upload the APK so you can download it ─────────────────────
+      # After the workflow finishes, go to:
+      #   GitHub → Your Repo → Actions → This run → Artifacts section
+      # Click "evsquare-release-apk" to download a ZIP containing the APK.
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: evsquare-release-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 30    # GitHub keeps it for 30 days
+
+      # ── Step 10: Print APK size for confirmation ──────────────────────────
+      - name: Show APK info
+        run: |
+          echo "=== BUILD SUCCESSFUL ==="
+          ls -lh build/app/outputs/flutter-apk/app-release.apk
+          echo "APK size: $(du -sh build/app/outputs/flutter-apk/app-release.apk | cut -f1)"

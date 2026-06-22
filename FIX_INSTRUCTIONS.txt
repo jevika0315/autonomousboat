@@ -1,0 +1,43 @@
+EV SQUARE — Fix for "Could not dispatch a message to the daemon"
+================================================================
+
+ROOT CAUSE:
+  The Gradle JVM was configured to request 4 GB of RAM (-Xmx4G).
+  On Windows laptops with less than 8 GB RAM this crashes the JVM
+  immediately, producing the hs_err_pid*.log crash file you saw.
+
+FIX APPLIED:
+  android/gradle.properties — reduced -Xmx4G to -Xmx2G
+
+WHAT TO DO NOW (in this exact order):
+======================================
+
+STEP 1 — Kill all existing Gradle daemons (they may be in a crashed state)
+  Open Command Prompt and run:
+
+    cd C:\Users\jevik\Downloads\evsquare-milestone1-gradle-fixed\flutter_app
+    .\gradlew --stop
+
+  If that gives an error, also run:
+    taskkill /F /IM java.exe
+
+STEP 2 — Clean Flutter build cache
+  In the same Command Prompt:
+
+    flutter clean
+
+STEP 3 — Re-fetch packages
+    flutter pub get
+
+STEP 4 — Build the APK
+    flutter build apk --release
+
+  Expected output:
+    ✓  Built build\app\outputs\flutter-apk\app-release.apk
+
+IF YOU STILL GET A CRASH (very low RAM machine):
+  Open android/gradle.properties and lower further:
+    org.gradle.jvmargs=-Xmx1G -Xms256m -XX:+UseG1GC -Dfile.encoding=UTF-8
+
+APK LOCATION WHEN BUILD SUCCEEDS:
+  flutter_app\build\app\outputs\flutter-apk\app-release.apk

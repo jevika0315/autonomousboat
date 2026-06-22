@@ -1,0 +1,30 @@
+name: evsquare_camera
+description: EV SQUARE Camera Viewer — Live USB camera feed from Raspberry Pi
+
+# The version of your app. Format: major.minor.patch+buildNumber
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.3.0 <4.0.0"
+  flutter: ">=3.19.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # WebRTC for Flutter — handles video streaming
+  flutter_webrtc: ^0.11.2
+
+  # WebSocket client — connects to the signaling server
+  web_socket_channel: ^3.0.1
+
+  # App icons (standard Flutter package)
+  cupertino_icons: ^1.0.6
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
