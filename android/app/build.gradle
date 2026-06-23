@@ -6,8 +6,8 @@ plugins {
 
 android {
     namespace "com.evsquare.evsquare_camera"
-    compileSdk 35
-    ndkVersion "26.1.10909125"
+    compileSdk 36
+    ndkVersion "27.0.12077973"
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
@@ -22,7 +22,7 @@ android {
         applicationId "com.evsquare.evsquare_camera"
         // flutter_webrtc requires minSdk 24
         minSdk 24
-        targetSdk 35
+        targetSdk 36
         versionCode flutter.versionCode
         versionName flutter.versionName
     }
